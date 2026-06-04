@@ -21,11 +21,11 @@ function renderTemplate(template, fields) {
 
 function formatDefaultMessage(fields) {
   const lines = [
+    ["名称", fields.name],
     ["信息", fields.info],
     ["内容", fields.content],
     ["收件人", fields.recipient],
-    ["发件人", fields.sender],
-    ["名称", fields.name]
+    ["发件人", fields.sender]
   ]
     .filter(([, value]) => value)
     .map(([label, value]) => `${label}: ${value}`);

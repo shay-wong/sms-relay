@@ -24,6 +24,25 @@ test("buildMessage maps English keys", () => {
   assert.match(message.text, /内容: 验证码 123456/);
 });
 
+test("buildMessage puts name first in the default field order", () => {
+  const message = buildMessage({
+    info: "sms",
+    content: "验证码 123456",
+    recipient: "iPhone",
+    sender: "95588",
+    name: "工商银行"
+  });
+
+  assert.equal(message.text, [
+    "短信转发",
+    "名称: 工商银行",
+    "信息: sms",
+    "内容: 验证码 123456",
+    "收件人: iPhone",
+    "发件人: 95588"
+  ].join("\n"));
+});
+
 test("buildMessage maps Chinese keys", () => {
   const message = buildMessage({
     "信息": "短信",

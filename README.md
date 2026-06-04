@@ -70,11 +70,11 @@ The WeChat message is sent in Chinese:
 
 ```text
 短信转发
+名称: 工商银行
 信息: sms
 内容: 验证码 123456
 收件人: iPhone
 发件人: 95588
-名称: 工商银行
 ```
 
 ## Deduplication
@@ -89,9 +89,9 @@ By default, only populated fields are shown:
 
 ```text
 短信转发
+名称: 工商银行
 内容: 验证码 123456
 发件人: 95588
-名称: 工商银行
 ```
 
 Set `MESSAGE_TEMPLATE` to control the exact forwarded text:
