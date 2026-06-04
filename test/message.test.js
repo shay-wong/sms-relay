@@ -112,7 +112,7 @@ test("renderTemplate accepts triple-brace placeholders", () => {
 
 test("renderTemplate uses defaults for empty placeholders", () => {
   assert.equal(
-    renderTemplate("名称：{{name|未知来源}}\n收件人：{{recipient|未提供}}", {
+    renderTemplate("名称：{{name:未知来源}}\n收件人：{{recipient:未提供}}", {
       name: "",
       recipient: "iPhone"
     }),
@@ -120,9 +120,16 @@ test("renderTemplate uses defaults for empty placeholders", () => {
   );
 });
 
+test("renderTemplate keeps pipe defaults for compatibility", () => {
+  assert.equal(
+    renderTemplate("名称：{{name|未知来源}}", { name: "" }),
+    "名称：未知来源"
+  );
+});
+
 test("renderTemplate supports defaults in triple-brace placeholders", () => {
   assert.equal(
-    renderTemplate("{{{content|无内容}}}", { content: "" }),
+    renderTemplate("{{{content:无内容}}}", { content: "" }),
     "无内容"
   );
 });

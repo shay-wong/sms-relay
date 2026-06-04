@@ -11,7 +11,7 @@ function renderTemplate(template, fields) {
   if (!template) return "";
 
   return String(template).replace(
-    /\{\{\{\s*([a-zA-Z_][a-zA-Z0-9_]*)(?:\|([^}]*?))?\s*\}\}\}|\{\{\s*([a-zA-Z_][a-zA-Z0-9_]*)(?:\|([^}]*?))?\s*\}\}/g,
+    /\{\{\{\s*([a-zA-Z_][a-zA-Z0-9_]*)(?:[:|]([^}]*?))?\s*\}\}\}|\{\{\s*([a-zA-Z_][a-zA-Z0-9_]*)(?:[:|]([^}]*?))?\s*\}\}/g,
     (_, rawKey, rawDefault, escapedKey, escapedDefault) => {
       const key = rawKey || escapedKey;
       const fallback = rawKey ? rawDefault : escapedDefault;
