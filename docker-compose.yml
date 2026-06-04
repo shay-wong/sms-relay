@@ -1,0 +1,8 @@
+services:
+  sms-relay:
+    build: .
+    container_name: sms-relay
+    restart: unless-stopped
+    network_mode: host
+    env_file:
+      - .env
