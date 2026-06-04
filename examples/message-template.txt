@@ -1,5 +1,5 @@
-【{{name}}】
-{{content}}
-发件人：{{sender}}
-收件人：{{recipient}}
-信息：{{info}}
+【{{name|未知来源}}】
+{{content|无内容}}
+发件人：{{sender|未知}}
+收件人：{{recipient|未知}}
+信息：{{info|未知}}

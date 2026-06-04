@@ -114,16 +114,22 @@ Placeholders are plain-text replacements. Triple braces are accepted too:
 MESSAGE_TEMPLATE={{{content}}}
 ```
 
+Use `|` to provide a default value when a field is empty:
+
+```env
+MESSAGE_TEMPLATE=【{{name|未知来源}}】{{content|无内容}}
+```
+
 For multiline templates, mount a file and set `MESSAGE_TEMPLATE_FILE`:
 
 Example: `examples/message-template.txt`
 
 ```text
-【{{name}}】
-{{content}}
-发件人：{{sender}}
-收件人：{{recipient}}
-信息：{{info}}
+【{{name|未知来源}}】
+{{content|无内容}}
+发件人：{{sender|未知}}
+收件人：{{recipient|未知}}
+信息：{{info|未知}}
 ```
 
 ```bash

@@ -11,10 +11,11 @@ function renderTemplate(template, fields) {
   if (!template) return "";
 
   return String(template).replace(
-    /\{\{\{\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\}\}\}|\{\{\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\}\}/g,
-    (_, rawKey, escapedKey) => {
+    /\{\{\{\s*([a-zA-Z_][a-zA-Z0-9_]*)(?:\|([^}]*?))?\s*\}\}\}|\{\{\s*([a-zA-Z_][a-zA-Z0-9_]*)(?:\|([^}]*?))?\s*\}\}/g,
+    (_, rawKey, rawDefault, escapedKey, escapedDefault) => {
       const key = rawKey || escapedKey;
-      return fields[key] || "";
+      const fallback = rawKey ? rawDefault : escapedDefault;
+      return fields[key] || (fallback === undefined ? "" : fallback.trim());
     }
   );
 }
