@@ -1,4 +1,5 @@
 const http = require("node:http");
+const fs = require("node:fs");
 const { URL } = require("node:url");
 const crypto = require("node:crypto");
 const { createDedupeStore } = require("./dedupe");
@@ -10,6 +11,16 @@ const TOKEN = process.env.TOKEN;
 const MAX_BODY_BYTES = Number(process.env.MAX_BODY_BYTES || 64 * 1024);
 const DEDUPE_TTL_SECONDS = Number(process.env.DEDUPE_TTL_SECONDS || 120);
 const dedupe = createDedupeStore({ ttlMs: DEDUPE_TTL_SECONDS * 1000 });
+
+function loadMessageTemplate() {
+  if (process.env.MESSAGE_TEMPLATE_FILE) {
+    return fs.readFileSync(process.env.MESSAGE_TEMPLATE_FILE, "utf8");
+  }
+
+  return process.env.MESSAGE_TEMPLATE || "";
+}
+
+const MESSAGE_TEMPLATE = loadMessageTemplate();
 
 if (!TOKEN) {
   console.error("TOKEN is required");
@@ -99,7 +110,7 @@ const server = http.createServer(async (req, res) => {
       data = { content: raw };
     }
 
-    const message = buildMessage(data, raw);
+    const message = buildMessage(data, raw, { template: MESSAGE_TEMPLATE });
     const duplicate = dedupe.check(message);
     console.log(JSON.stringify({
       at: new Date().toISOString(),

@@ -17,6 +17,8 @@ Required values:
 - `OPENILINK_APP_TOKEN`: OpeniLink App token with `message:write`
 - `OPENILINK_TO`: WeChat user id from Hub contacts, usually `xxx@im.wechat`
 - `DEDUPE_TTL_SECONDS`: duplicate SMS suppression window, defaults to `120`; set `0` to disable
+- `MESSAGE_TEMPLATE`: optional custom text template for forwarded messages
+- `MESSAGE_TEMPLATE_FILE`: optional path to a mounted template file; takes precedence over `MESSAGE_TEMPLATE`
 
 ## Run
 
@@ -80,6 +82,54 @@ The WeChat message is sent in Chinese:
 The service keeps an in-memory SHA-256 fingerprint of recent SMS fields and skips repeats within `DEDUPE_TTL_SECONDS`.
 
 This is designed for iPhone Shortcuts automations where several keyword rules can match the same verification SMS. The raw SMS body is not stored in the dedupe cache, and the cache is cleared when the container restarts.
+
+## Message Template
+
+By default, only populated fields are shown:
+
+```text
+短信转发
+内容: 验证码 123456
+发件人: 95588
+名称: 工商银行
+```
+
+Set `MESSAGE_TEMPLATE` to control the exact forwarded text:
+
+```env
+MESSAGE_TEMPLATE=【{{name}}】{{content}}
+```
+
+Available placeholders:
+
+- `{{info}}`
+- `{{content}}`
+- `{{recipient}}`
+- `{{sender}}`
+- `{{name}}`
+
+Placeholders are plain-text replacements. Triple braces are accepted too:
+
+```env
+MESSAGE_TEMPLATE={{{content}}}
+```
+
+For multiline templates, mount a file and set `MESSAGE_TEMPLATE_FILE`:
+
+```yaml
+services:
+  sms-relay:
+    image: shaywong/sms-relay:<version>
+    network_mode: host
+    env_file:
+      - .env
+    volumes:
+      - ./message-template.txt:/app/config/message-template.txt:ro
+```
+
+```env
+MESSAGE_TEMPLATE_FILE=/app/config/message-template.txt
+```
 
 ## iPhone Shortcuts
 

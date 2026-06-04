@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { buildMessage, firstValue } = require("../src/message");
+const { buildMessage, firstValue, renderTemplate } = require("../src/message");
 
 test("firstValue returns the first non-empty value", () => {
   assert.equal(firstValue(undefined, null, "", 0, "next"), "0");
@@ -61,4 +61,37 @@ test("buildMessage omits empty fields from forwarded text", () => {
   assert.doesNotMatch(message.text, /收件人:/);
   assert.doesNotMatch(message.text, /名称:/);
   assert.doesNotMatch(message.text, /未知/);
+});
+
+test("buildMessage renders a custom template", () => {
+  const message = buildMessage({
+    content: "验证码 123456",
+    sender: "95588",
+    name: "工商银行"
+  }, "", {
+    template: "【{{name}}】{{content}}\n来自 {{sender}}\n空字段: {{info}}"
+  });
+
+  assert.equal(message.text, "【工商银行】验证码 123456\n来自 95588\n空字段: ");
+});
+
+test("renderTemplate keeps plain-text placeholder content raw", () => {
+  assert.equal(
+    renderTemplate("{{content}}", { content: "<code>&123</code>" }),
+    "<code>&123</code>"
+  );
+});
+
+test("renderTemplate accepts triple-brace placeholders", () => {
+  assert.equal(
+    renderTemplate("{{{content}}}", { content: "<code>&123</code>" }),
+    "<code>&123</code>"
+  );
+});
+
+test("renderTemplate does not reprocess inserted placeholder-like content", () => {
+  assert.equal(
+    renderTemplate("{{content}}", { content: "{{sender}}", sender: "95588" }),
+    "{{sender}}"
+  );
 });
