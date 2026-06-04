@@ -45,3 +45,20 @@ test("buildMessage falls back to raw content", () => {
   assert.equal(message.content, "raw sms body");
   assert.match(message.text, /内容: raw sms body/);
 });
+
+test("buildMessage omits empty fields from forwarded text", () => {
+  const message = buildMessage({
+    content: "验证码 123456",
+    sender: "95588"
+  });
+
+  assert.equal(message.text, [
+    "短信转发",
+    "内容: 验证码 123456",
+    "发件人: 95588"
+  ].join("\n"));
+  assert.doesNotMatch(message.text, /信息:/);
+  assert.doesNotMatch(message.text, /收件人:/);
+  assert.doesNotMatch(message.text, /名称:/);
+  assert.doesNotMatch(message.text, /未知/);
+});

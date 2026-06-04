@@ -14,14 +14,17 @@ function buildMessage(data, raw = "") {
   const sender = firstValue(data.sender, data.from, data.phone, data["发件人"]);
   const name = firstValue(data.name, data.title, data["名称"]);
 
-  const text = [
-    "短信转发",
-    `信息: ${info || "未知"}`,
-    `内容: ${content || "未知"}`,
-    `收件人: ${recipient || "未知"}`,
-    `发件人: ${sender || "未知"}`,
-    `名称: ${name || "未知"}`
-  ].join("\n");
+  const lines = [
+    ["信息", info],
+    ["内容", content],
+    ["收件人", recipient],
+    ["发件人", sender],
+    ["名称", name]
+  ]
+    .filter(([, value]) => value)
+    .map(([label, value]) => `${label}: ${value}`);
+
+  const text = ["短信转发", ...lines].join("\n");
 
   return {
     info,
