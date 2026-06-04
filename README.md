@@ -116,6 +116,20 @@ MESSAGE_TEMPLATE={{{content}}}
 
 For multiline templates, mount a file and set `MESSAGE_TEMPLATE_FILE`:
 
+Example: `examples/message-template.txt`
+
+```text
+【{{name}}】
+{{content}}
+发件人：{{sender}}
+收件人：{{recipient}}
+信息：{{info}}
+```
+
+```bash
+cp examples/message-template.txt message-template.txt
+```
+
 ```yaml
 services:
   sms-relay:

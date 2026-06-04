@@ -1,0 +1,5 @@
+【{{name}}】
+{{content}}
+发件人：{{sender}}
+收件人：{{recipient}}
+信息：{{info}}

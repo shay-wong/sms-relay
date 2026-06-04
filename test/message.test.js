@@ -1,5 +1,7 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
 const { buildMessage, firstValue, renderTemplate } = require("../src/message");
 
 test("firstValue returns the first non-empty value", () => {
@@ -113,4 +115,24 @@ test("renderTemplate does not reprocess inserted placeholder-like content", () =
     renderTemplate("{{content}}", { content: "{{sender}}", sender: "95588" }),
     "{{sender}}"
   );
+});
+
+test("example message template renders with supported placeholders", () => {
+  const template = fs.readFileSync(path.join(__dirname, "../examples/message-template.txt"), "utf8");
+  const message = buildMessage({
+    info: "sms",
+    content: "验证码 123456",
+    recipient: "iPhone",
+    sender: "95588",
+    name: "工商银行"
+  }, "", { template });
+
+  assert.equal(message.text, [
+    "【工商银行】",
+    "验证码 123456",
+    "发件人：95588",
+    "收件人：iPhone",
+    "信息：sms",
+    ""
+  ].join("\n"));
 });
