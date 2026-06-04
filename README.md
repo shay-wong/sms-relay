@@ -85,7 +85,12 @@ Create an automation for Messages, then use "Get Contents of URL":
 
 ## Docker Image Publishing
 
-GitHub Actions builds images for GHCR and Docker Hub.
+GitHub Actions builds and publishes images for GHCR and Docker Hub only when a version tag is pushed.
+
+```bash
+git tag -a v0.1.0 -m "v0.1.0"
+git push origin v0.1.0
+```
 
 For Docker Hub, configure repository secrets:
 
