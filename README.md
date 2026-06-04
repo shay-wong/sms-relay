@@ -16,6 +16,7 @@ Required values:
 - `OPENILINK_URL`: Hub URL, usually `http://127.0.0.1:9800`
 - `OPENILINK_APP_TOKEN`: OpeniLink App token with `message:write`
 - `OPENILINK_TO`: WeChat user id from Hub contacts, usually `xxx@im.wechat`
+- `DEDUPE_TTL_SECONDS`: duplicate SMS suppression window, defaults to `120`; set `0` to disable
 
 ## Run
 
@@ -73,6 +74,12 @@ The WeChat message is sent in Chinese:
 发件人: 95588
 名称: 工商银行
 ```
+
+## Deduplication
+
+The service keeps an in-memory SHA-256 fingerprint of recent SMS fields and skips repeats within `DEDUPE_TTL_SECONDS`.
+
+This is designed for iPhone Shortcuts automations where several keyword rules can match the same verification SMS. The raw SMS body is not stored in the dedupe cache, and the cache is cleared when the container restarts.
 
 ## iPhone Shortcuts
 

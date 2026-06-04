@@ -1,12 +1,15 @@
 const http = require("node:http");
 const { URL } = require("node:url");
 const crypto = require("node:crypto");
+const { createDedupeStore } = require("./dedupe");
 const { buildMessage } = require("./message");
 
 const HOST = process.env.HOST || "127.0.0.1";
 const PORT = Number(process.env.PORT || 3000);
 const TOKEN = process.env.TOKEN;
 const MAX_BODY_BYTES = Number(process.env.MAX_BODY_BYTES || 64 * 1024);
+const DEDUPE_TTL_SECONDS = Number(process.env.DEDUPE_TTL_SECONDS || 120);
+const dedupe = createDedupeStore({ ttlMs: DEDUPE_TTL_SECONDS * 1000 });
 
 if (!TOKEN) {
   console.error("TOKEN is required");
@@ -97,14 +100,28 @@ const server = http.createServer(async (req, res) => {
     }
 
     const message = buildMessage(data, raw);
+    const duplicate = dedupe.check(message);
     console.log(JSON.stringify({
       at: new Date().toISOString(),
       info: message.info,
       recipient: message.recipient,
       sender: message.sender,
       name: message.name,
-      contentLength: message.content.length
+      contentLength: message.content.length,
+      duplicate: duplicate.duplicate
     }));
+
+    if (duplicate.duplicate) {
+      writeJson(res, 200, {
+        ok: true,
+        duplicate: true,
+        forward: {
+          type: "deduplicated",
+          expiresInSeconds: Math.ceil(duplicate.expiresInMs / 1000)
+        }
+      });
+      return;
+    }
 
     const forward = await forwardToOpeniLink(message.text);
     writeJson(res, 200, { ok: true, forward });
