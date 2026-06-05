@@ -1,6 +1,6 @@
 {
   "name": "sms-relay",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "private": true,
   "description": "Relay iPhone Shortcuts SMS webhooks to OpeniLink Hub.",
   "main": "src/server.js",
