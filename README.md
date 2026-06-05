@@ -12,11 +12,16 @@ cp .env.example .env
 
 Required values:
 
-- `TOKEN`: shared secret for `/sms`
+- `TOKEN`: shared secret for the webhook endpoint
+- `WEBHOOK_PATH`: webhook endpoint path, defaults to `/sms`; set `/` to accept root-path POST requests
+- `HEALTH_PATH`: health check endpoint path, defaults to `/health`
+- `LOG_LEVEL`: log level, defaults to `info`; supported values are `debug`, `info`, `error`, `silent`, `off`
 - `OPENILINK_URL`: Hub URL, usually `http://127.0.0.1:9800`
+- `OPENILINK_SEND_PATH`: OpeniLink send endpoint path, defaults to `/bot/v1/message/send`
 - `OPENILINK_APP_TOKEN`: OpeniLink App token with `message:write`
 - `OPENILINK_TO`: WeChat user id from Hub contacts, usually `xxx@im.wechat`
 - `DEDUPE_TTL_SECONDS`: duplicate SMS suppression window, defaults to `120`; set `0` to disable
+- `MAX_BODY_BYTES`: maximum request body size, defaults to `65536`
 - `MESSAGE_TEMPLATE`: optional custom text template for forwarded messages
 - `MESSAGE_TEMPLATE_FILE`: optional path to a mounted template file; takes precedence over `MESSAGE_TEMPLATE`
 
@@ -38,6 +43,26 @@ Test forwarding:
 curl -i -X POST "http://127.0.0.1:3000/sms?token=$TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"info":"sms","content":"验证码 123456","recipient":"iPhone","sender":"95588","name":"工商银行"}'
+```
+
+To accept webhook requests at the root path instead, set:
+
+```env
+WEBHOOK_PATH=/
+```
+
+Then test with:
+
+```bash
+curl -i -X POST "http://127.0.0.1:3000/?token=$TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"content":"验证码 123456","sender":"95588","name":"工商银行"}'
+```
+
+Logs are written to process stdout/stderr. With Docker Compose, view them with:
+
+```bash
+docker compose logs -f sms-relay
 ```
 
 ## Request Fields
@@ -161,6 +186,8 @@ Create an automation for Messages, then use "Get Contents of URL":
 - Method: `POST`
 - Body: JSON
 - Fields: `info`, `content`, `recipient`, `sender`, `name`
+
+If `WEBHOOK_PATH=/`, use `http://your-server-ip/?token=...` instead.
 
 ## Docker Image Publishing
 

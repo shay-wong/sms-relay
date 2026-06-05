@@ -4,12 +4,18 @@ const { URL } = require("node:url");
 const crypto = require("node:crypto");
 const { createDedupeStore } = require("./dedupe");
 const { buildMessage } = require("./message");
+const { createLogger } = require("./logger");
+const { isConfiguredPath, normalizePath, normalizeWebhookPath } = require("./webhook-path");
 
 const HOST = process.env.HOST || "127.0.0.1";
 const PORT = Number(process.env.PORT || 3000);
 const TOKEN = process.env.TOKEN;
 const MAX_BODY_BYTES = Number(process.env.MAX_BODY_BYTES || 64 * 1024);
 const DEDUPE_TTL_SECONDS = Number(process.env.DEDUPE_TTL_SECONDS || 120);
+const WEBHOOK_PATH = normalizeWebhookPath(process.env.WEBHOOK_PATH);
+const HEALTH_PATH = normalizePath(process.env.HEALTH_PATH, "/health");
+const OPENILINK_SEND_PATH = normalizePath(process.env.OPENILINK_SEND_PATH, "/bot/v1/message/send");
+const logger = createLogger({ level: process.env.LOG_LEVEL });
 const dedupe = createDedupeStore({ ttlMs: DEDUPE_TTL_SECONDS * 1000 });
 
 function loadMessageTemplate() {
@@ -23,7 +29,7 @@ function loadMessageTemplate() {
 const MESSAGE_TEMPLATE = loadMessageTemplate();
 
 if (!TOKEN) {
-  console.error("TOKEN is required");
+  logger.error("TOKEN is required");
   process.exit(1);
 }
 
@@ -53,7 +59,7 @@ async function forwardToOpeniLink(text) {
     return { type: "log-only" };
   }
 
-  const endpoint = new URL("/bot/v1/message/send", process.env.OPENILINK_URL);
+  const endpoint = new URL(OPENILINK_SEND_PATH, process.env.OPENILINK_URL);
   const response = await fetch(endpoint, {
     method: "POST",
     headers: {
@@ -83,12 +89,12 @@ const server = http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url, `http://${req.headers.host}`);
 
-    if (req.method === "GET" && url.pathname === "/health") {
+    if (req.method === "GET" && isConfiguredPath(url.pathname, HEALTH_PATH)) {
       writeJson(res, 200, { ok: true });
       return;
     }
 
-    if (req.method !== "POST" || url.pathname !== "/sms") {
+    if (req.method !== "POST" || !isConfiguredPath(url.pathname, WEBHOOK_PATH)) {
       res.writeHead(404);
       res.end("not found");
       return;
@@ -112,7 +118,7 @@ const server = http.createServer(async (req, res) => {
 
     const message = buildMessage(data, raw, { template: MESSAGE_TEMPLATE });
     const duplicate = dedupe.check(message);
-    console.log(JSON.stringify({
+    logger.info(JSON.stringify({
       at: new Date().toISOString(),
       info: message.info,
       recipient: message.recipient,
@@ -137,12 +143,12 @@ const server = http.createServer(async (req, res) => {
     const forward = await forwardToOpeniLink(message.text);
     writeJson(res, 200, { ok: true, forward });
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     res.writeHead(500);
     res.end("internal error");
   }
 });
 
 server.listen(PORT, HOST, () => {
-  console.log(`sms-relay listening on ${HOST}:${PORT}`);
+  logger.info(`sms-relay listening on ${HOST}:${PORT}${WEBHOOK_PATH}`);
 });
