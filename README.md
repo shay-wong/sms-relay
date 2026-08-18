@@ -213,9 +213,23 @@ LARK_RECEIVE_ID_TYPE=email
 LARK_RECEIVE_ID=user@example.com
 ```
 
-## Docker Image Publishing
+## CI/CD
 
-GitHub Actions builds and publishes images for GHCR and Docker Hub only when a version tag is pushed.
+GitHub Actions runs tests for pull requests and `main` pushes. After a successful `main` build, it publishes immutable `sha-<commit>` images to GHCR and Docker Hub, then deploys that exact Docker Hub image to production. A failed health check restores the previous Compose configuration and container image.
+
+The application is deployed as one image. A frontend added to this repository and copied by the `Dockerfile` will therefore be released with the backend by the same pipeline.
+
+The `production` GitHub Environment requires:
+
+- Secret `DEPLOY_SSH_KEY`: restricted deployment private key
+- Variable `DEPLOY_HOST`: production server address
+- Variable `DEPLOY_PORT`: SSH port, normally `22`
+- Variable `DEPLOY_USER`: restricted key owner
+- Variable `DEPLOY_KNOWN_HOSTS`: pinned SSH host key
+
+The matching public key must use a forced command that runs `ops/deploy-sms-relay` on the server. It accepts only immutable `sha-<commit>` image tags.
+
+Version tags continue to publish versioned and `latest` images:
 
 ```bash
 git tag -a v0.1.0 -m "v0.1.0"

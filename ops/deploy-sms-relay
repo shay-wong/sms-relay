@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+readonly APP_DIR=/opt/apps/sms-relay
+readonly IMAGE_REPOSITORY=shaywong/sms-relay
+readonly HEALTH_URL=http://127.0.0.1:3000/health
+
+exec 9>/run/lock/sms-relay-deploy.lock
+flock 9
+
+if [[ "${SSH_ORIGINAL_COMMAND:-}" =~ ^deploy-sms-relay\ (sha-[0-9a-f]{40})$ ]]; then
+  tag="${BASH_REMATCH[1]}"
+else
+  echo "unsupported deploy command" >&2
+  exit 64
+fi
+
+cd "$APP_DIR"
+next_image="$IMAGE_REPOSITORY:$tag"
+previous_compose="$(mktemp /tmp/sms-relay-compose.XXXXXX)"
+cp docker-compose.yml "$previous_compose"
+trap 'unlink "$previous_compose"' EXIT
+
+docker pull "$next_image"
+if ! sed -i -E "s#^([[:space:]]*image:).*#\1 $next_image#" docker-compose.yml \
+  || ! grep -Fq "image: $next_image" docker-compose.yml \
+  || ! docker compose config -q \
+  || ! docker compose up -d --force-recreate sms-relay; then
+  echo "deployment failed; rolling back" >&2
+  cp "$previous_compose" docker-compose.yml
+  docker compose up -d --force-recreate sms-relay
+  exit 1
+fi
+
+for _ in {1..20}; do
+  if curl -fsS --max-time 3 "$HEALTH_URL" >/dev/null; then
+    echo "deployed $next_image"
+    exit 0
+  fi
+  sleep 2
+done
+
+echo "health check failed; rolling back" >&2
+cp "$previous_compose" docker-compose.yml
+docker compose up -d --force-recreate sms-relay
+exit 1
