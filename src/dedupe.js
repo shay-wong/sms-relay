@@ -59,6 +59,7 @@ function createDedupeStore({ ttlMs, now = () => Date.now() }) {
 
   return {
     check,
+    forget: fingerprint => entries.delete(fingerprint),
     size: () => entries.size
   };
 }

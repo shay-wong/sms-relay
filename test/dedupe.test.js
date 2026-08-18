@@ -52,3 +52,11 @@ test("dedupe can be disabled with zero TTL", () => {
   assert.equal(store.check(sms).duplicate, false);
   assert.equal(store.check(sms).duplicate, false);
 });
+
+test("dedupe can forget a failed delivery", () => {
+  const store = createDedupeStore({ ttlMs: 120000 });
+  const first = store.check(sms);
+
+  assert.equal(store.forget(first.fingerprint), true);
+  assert.equal(store.check(sms).duplicate, false);
+});

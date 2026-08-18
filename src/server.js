@@ -5,6 +5,7 @@ const crypto = require("node:crypto");
 const { createDedupeStore } = require("./dedupe");
 const { buildMessage } = require("./message");
 const { createLogger } = require("./logger");
+const { createLarkSender } = require("./lark");
 const { isConfiguredPath, normalizePath, normalizeWebhookPath } = require("./webhook-path");
 
 const HOST = process.env.HOST || "127.0.0.1";
@@ -17,6 +18,22 @@ const HEALTH_PATH = normalizePath(process.env.HEALTH_PATH, "/health");
 const OPENILINK_SEND_PATH = normalizePath(process.env.OPENILINK_SEND_PATH, "/bot/v1/message/send");
 const logger = createLogger({ level: process.env.LOG_LEVEL });
 const dedupe = createDedupeStore({ ttlMs: DEDUPE_TTL_SECONDS * 1000 });
+
+const larkConfig = {
+  appId: process.env.LARK_APP_ID,
+  appSecret: process.env.LARK_APP_SECRET,
+  receiveId: process.env.LARK_RECEIVE_ID,
+  receiveIdType: process.env.LARK_RECEIVE_ID_TYPE,
+  baseUrl: process.env.LARK_BASE_URL
+};
+const larkConfigCount = [larkConfig.appId, larkConfig.appSecret, larkConfig.receiveId].filter(Boolean).length;
+
+if (larkConfigCount > 0 && larkConfigCount < 3) {
+  logger.error("LARK_APP_ID, LARK_APP_SECRET, and LARK_RECEIVE_ID must be configured together");
+  process.exit(1);
+}
+
+const larkSender = larkConfigCount === 3 ? createLarkSender(larkConfig) : null;
 
 function loadMessageTemplate() {
   if (process.env.MESSAGE_TEMPLATE_FILE) {
@@ -73,11 +90,21 @@ async function forwardToOpeniLink(text) {
     })
   });
 
+  const body = await response.text();
+  if (!response.ok) {
+    throw new Error(`OpeniLink request failed: HTTP ${response.status}`);
+  }
+
   return {
     type: "openilink",
     status: response.status,
-    body: await response.text()
+    body
   };
+}
+
+async function forwardMessage(text) {
+  if (larkSender) return larkSender.sendText(text);
+  return forwardToOpeniLink(text);
 }
 
 function writeJson(res, status, data) {
@@ -140,7 +167,13 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
-    const forward = await forwardToOpeniLink(message.text);
+    let forward;
+    try {
+      forward = await forwardMessage(message.text);
+    } catch (error) {
+      dedupe.forget(duplicate.fingerprint);
+      throw error;
+    }
     writeJson(res, 200, { ok: true, forward });
   } catch (error) {
     logger.error(error);

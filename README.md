@@ -1,6 +1,6 @@
 # sms-relay
 
-Relay iPhone Shortcuts SMS automation webhooks to OpeniLink Hub.
+Relay iPhone Shortcuts SMS automation webhooks directly to a Feishu app bot, with OpeniLink Hub available as a legacy fallback.
 
 ## Configuration
 
@@ -16,10 +16,12 @@ Required values:
 - `WEBHOOK_PATH`: webhook endpoint path, defaults to `/sms`; set `/` to accept root-path POST requests
 - `HEALTH_PATH`: health check endpoint path, defaults to `/health`
 - `LOG_LEVEL`: log level, defaults to `info`; supported values are `debug`, `info`, `error`, `silent`, `off`
-- `OPENILINK_URL`: Hub URL, usually `http://127.0.0.1:9800`
-- `OPENILINK_SEND_PATH`: OpeniLink send endpoint path, defaults to `/bot/v1/message/send`
-- `OPENILINK_APP_TOKEN`: OpeniLink App token with `message:write`
-- `OPENILINK_TO`: WeChat user id from Hub contacts, usually `xxx@im.wechat`
+- `LARK_APP_ID`: Feishu custom app ID
+- `LARK_APP_SECRET`: Feishu custom app secret
+- `LARK_RECEIVE_ID`: private-message recipient identifier
+- `LARK_RECEIVE_ID_TYPE`: `open_id`, `user_id`, `union_id`, or `email`; defaults to `open_id`
+- `LARK_BASE_URL`: Feishu OpenAPI base URL; defaults to `https://open.feishu.cn`
+- `OPENILINK_URL`, `OPENILINK_SEND_PATH`, `OPENILINK_APP_TOKEN`, `OPENILINK_TO`: legacy fallback used only when Feishu credentials are not configured
 - `DEDUPE_TTL_SECONDS`: duplicate SMS suppression window, defaults to `120`; set `0` to disable
 - `MAX_BODY_BYTES`: maximum request body size, defaults to `65536`
 - `MESSAGE_TEMPLATE`: optional custom text template for forwarded messages
@@ -91,7 +93,7 @@ Chinese keys are also supported:
 }
 ```
 
-The WeChat message is sent in Chinese:
+The forwarded message is sent in Chinese:
 
 ```text
 短信转发
@@ -188,6 +190,28 @@ Create an automation for Messages, then use "Get Contents of URL":
 - Fields: `info`, `content`, `recipient`, `sender`, `name`
 
 If `WEBHOOK_PATH=/`, use `http://your-server-ip/?token=...` instead.
+
+## Feishu Private Messages
+
+Create an enterprise custom app in the Feishu developer console, enable its bot capability, and grant `im:message:send_as_bot`. Publish the app and include the recipient in its availability scope.
+
+The recipient must open a direct conversation with the bot once. This establishes the direct-message relationship; unlike the WeChat iLink flow, no periodic keepalive message is required.
+
+Configure the relay:
+
+```env
+LARK_APP_ID=cli_xxx
+LARK_APP_SECRET=xxx
+LARK_RECEIVE_ID_TYPE=open_id
+LARK_RECEIVE_ID=ou_xxx
+```
+
+`email` can be used instead when it is easier to identify the recipient:
+
+```env
+LARK_RECEIVE_ID_TYPE=email
+LARK_RECEIVE_ID=user@example.com
+```
 
 ## Docker Image Publishing
 
